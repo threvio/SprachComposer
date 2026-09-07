@@ -1,0 +1,6 @@
+/temp/*
+!/temp/.gitkeep
+config.ini
+.env
+nbproject/
+.vscode/
