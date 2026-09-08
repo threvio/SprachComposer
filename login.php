@@ -66,7 +66,7 @@ require_once 'includes/header.php';
                     <input type="password" id="password" name="password" required style="width: 100%; padding-right: 40px; box-sizing: border-box;">
 
                     <!-- Ausgangszustand: Durchgestrichenes Auge (Passwort ist verborgen) -->
-                    <i class="fas fa-eye-slash toggle-password-icon" id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #cbd5e1;"></i>
+                    <i class="fas fa-eye-slash" id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #cbd5e1;"></i>
                 </div>
             </div>
 
