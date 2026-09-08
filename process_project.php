@@ -382,6 +382,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         $masterZip->close();
+
+        // GARBAGE COLLECTION: Workspace-Ordners nach der Komprimierung löschen ---
+        $dir = new RecursiveDirectoryIterator($tempDirPath, RecursiveDirectoryIterator::SKIP_DOTS);
+        $files = new RecursiveIteratorIterator($dir, RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($files as $file) {
+            $file->isDir() ? rmdir($file->getRealPath()) : unlink($file->getRealPath());
+        }
+        rmdir($tempDirPath);
     } else {
         die("Kritischer Fehler: Die finale ZIP-Datei konnte nicht erstellt werden.");
     }

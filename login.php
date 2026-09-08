@@ -62,8 +62,35 @@ require_once 'includes/header.php';
 
             <div class="form-group">
                 <label for="password">Passwort</label>
-                <input type="password" id="password" name="password" placeholder="••••••••" required>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" required style="width: 100%; padding-right: 40px; box-sizing: border-box;">
+
+                    <!-- Ausgangszustand: Durchgestrichenes Auge (Passwort ist verborgen) -->
+                    <i class="fas fa-eye-slash toggle-password-icon" id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #cbd5e1;"></i>
+                </div>
             </div>
+
+            <script>
+                // Event-Listener für das Toggle-Icon
+                document.getElementById('togglePassword').addEventListener('click', function() {
+                    const passwordInput = document.getElementById('password');
+
+                    // Prüfung des aktuellen Feldtyps und entsprechender Wechsel
+                    if (passwordInput.type === 'password') {
+                        // Passwort als Klartext anzeigen
+                        passwordInput.type = 'text';
+                        // Icon auf "geöffnetes Auge" ändern
+                        this.classList.remove('fa-eye-slash');
+                        this.classList.add('fa-eye');
+                    } else {
+                        // Passwort wieder maskieren (Punkte)
+                        passwordInput.type = 'password';
+                        // Icon auf "durchgestrichenes Auge" zurücksetzen
+                        this.classList.remove('fa-eye');
+                        this.classList.add('fa-eye-slash');
+                    }
+                });
+            </script>
 
             <button type="submit" class="btn">Anmelden</button>
 
