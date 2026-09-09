@@ -100,18 +100,6 @@ require_once "includes/header.php";
                                 <td><?php echo htmlspecialchars($projekt['scorm_version']); ?></td>
                                 <td><?php echo date('d.m.Y', strtotime($projekt['created_at'])); ?></td>
                                 <td class="text-right table-actions">
-                                    <?php
-                                    // Generierung des Pfads zur ZIP-Datei
-                                    $cleanName = preg_replace('/[^a-zA-Z0-9_]/', '_', $projekt['project_name']);
-                                    $zipFilePath = 'temp/SCORM_' . $cleanName . '.zip';
-                                    ?>
-
-                                    <!-- Zeigt die Button Herunterladen nur an, wenn die Datei physisch existiert -->
-                                    <?php if (file_exists($zipFilePath)): ?>
-                                        <a href="<?php echo $zipFilePath; ?>" class="action-edit" download>
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
-                                    <?php endif; ?>
                                     <a href="create_project.php?edit_id=<?php echo $projekt['id']; ?>" class="action-edit"><i class="fas fa-pen"></i> Bearbeiten</a>
                                     <a href="delete_project.php?id=<?php echo $projekt['id']; ?>" class="action-delete" onclick="return confirm('Möchten Sie dieses Projekt wirklich löschen?');"><i class="fas fa-trash"></i> Löschen
                                     </a>
