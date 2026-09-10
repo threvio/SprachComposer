@@ -1,8 +1,20 @@
 <?php
 // setup.php - Einmalige Installation der Datenbank und Tabellen
-$host = 'localhost';
-$user = 'root';
-$pass = '';
+
+// Lade DB-Daten aus der config.ini
+$configFile = __DIR__ . '/config.ini';
+
+if (!file_exists($configFile)) {
+    die("<h2 style='color: red;'>Fehler: config.ini nicht gefunden!</h2><p>Bitte erstelle eine Kopie von config.example.ini, benenne sie in config.ini um und trage deine Datenbank-Daten ein.</p>");
+}
+
+$config = parse_ini_file($configFile);
+
+// Werte aus der Config auslesen (mit Fallback-Werten)
+$host = $config["DB_HOST"] ?? "127.0.0.1";
+$user = $config["DB_USER"] ?? "root";
+$pass = $config["DB_PASSWORD"] ?? "";
+$dbname = $config["DB_NAME"] ?? "sprachcomposer";
 
 try {
     // Verbindung zum Server ohne Datenbank aufbauen
@@ -10,8 +22,8 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // 1. Datenbank erstellen
-    $pdo->exec("CREATE DATABASE IF NOT EXISTS sprachcomposer CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    $pdo->exec("USE sprachcomposer");
+    $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbname` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $pdo->exec("USE `$dbname`");
 
     // 2. Tabellen erstellen
     $pdo->exec("CREATE TABLE IF NOT EXISTS users (
@@ -39,7 +51,7 @@ try {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )");
 
-    // 3. 6 Sprachen einfügen (falls leer)
+    // 3. Sprachen einfügen (falls leer)
     $stmt = $pdo->query("SELECT COUNT(*) FROM languages");
     if ($stmt->fetchColumn() == 0) {
         $pdo->exec("INSERT INTO languages (lang_code, lang_name) VALUES 
@@ -62,8 +74,6 @@ try {
 
     echo "<h2 style='color: green; font-family: sans-serif;'>Erfolg! Die Datenbank 'sprachcomposer' wurde erfolgreich eingerichtet.</h2>";
     echo "<p style='font-family: sans-serif;'>Du kannst dich jetzt hier einloggen: <a href='login.php'>Zum Login</a></p>";
-
 } catch (PDOException $e) {
     echo "<h2 style='color: red;'>Fehler bei der Installation:</h2> " . $e->getMessage();
 }
-?>

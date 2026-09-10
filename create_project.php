@@ -228,9 +228,9 @@ require_once "includes/header.php";
             </div>
 
             <div class="form-actions text-right">
-                <button type="submit" id="submit-btn" class="btn btn-primary" style="padding: 15px 30px; font-size: 16px;">
-                    <i class="fas fa-save"></i> Projekt speichern & generieren
-                </button>
+                <button type="submit" name="action" value="save_only" class="btn btn-secondary">Speichern</button>
+
+                <button type="submit" name="action" value="generate" class="btn btn-primary">Projekt generieren</button>
             </div>
         </form>
     </div>

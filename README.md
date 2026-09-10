@@ -18,8 +18,9 @@ Wenn du das Projekt zum ersten Mal von Git herunterlädst und auf deinem lokalen
    Erstelle eine Kopie der Datei `config.example.ini`, benenne sie in `config.ini` um und passe bei Bedarf die Datenbank-Zugangsdaten (User/Passwort) an.
 
 4. **Automatisches Setup (Der Setup-Assistent):**
-   Öffne deinen Browser und rufe folgenden Link auf, um die Datenbank und den Standard-Admin automatisch anzulegen: **`http://localhost/SprachComposer/setup.php`**
-   _(Wenn alles glatt läuft, erscheint eine grüne Erfolgsmeldung mit direktem Link zum Login)._
+   Öffne deinen Browser und rufe die setup.php in deinem lokalen Projektordner auf.
+   Beispiel: http://localhost/DEIN*ORDNERNAME/setup.php (z. B. http://localhost/SprachComposer/setup.php)
+   *(Wenn alles glatt läuft, erscheint eine grüne Erfolgsmeldung mit direktem Link zum Login).\_
 
 5. **Erster Login in die App:**
    Klicke auf den Link zur Anmeldeseite oder rufe direkt **`http://localhost/SprachComposer/login.php`** auf.

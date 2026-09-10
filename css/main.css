@@ -13,7 +13,7 @@
     --border: #e0e0e0;
     --btn-light: #cbd5e1;
     --fehler: #be0848;
-    --success: #0bad47;
+    --success: #0d9e00fb;
 }
 /* Reset */
 * {
@@ -306,14 +306,44 @@ p.text-bottom {
     font-size: 14px;
     display: inline-flex;
     align-items: center;
+    border: none;
     gap: 8px;
-    transition: background 0.2s, transform 0.1s;
+    transition: all 0.2s ease-in-out;
 }
 .btn-primary:hover {
     background: var(--darkyellow);
-    color: var(--card-bg);
+    color: var(--text-main);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(29, 52, 71, 0.15);
 }
 .btn-primary:active {
+    transform: translateY(1px);
+}
+
+.btn-secondary {
+    background: var(--darkyellow);
+    color: var(--card-bg);
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    margin-right: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-secondary:hover {
+    background: var(--blue);
+    color: var(--darkyellow);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(29, 52, 71, 0.15);
+}
+
+.btn-secondary:active {
     transform: translateY(1px);
 }
 
