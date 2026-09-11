@@ -13,7 +13,7 @@ $editMode = false;
 $editData = [
     "project_name" => '',
     "course_title" => '',
-    "scorm_version" => '1.2',
+    "scorm_version" => '',
     "primary_color" => '#00386b',
     "layout_style" => 'layout1'
 ];
@@ -58,27 +58,14 @@ require_once "includes/header.php";
                     <div class="form-col">
                         <div class="form-group">
                             <label for="project_name">Interner Projektname</label>
-                            <input type="text" id="project_name" name="project_name" value="<?php echo htmlspecialchars($editData['project_name']); ?>" placeholder="z.B. Hygiene 2026" required>
+                            <input type="text" id="project_name" name="project_name" value="<?php echo htmlspecialchars($editData['project_name'] ?? ''); ?>" placeholder="z.B. Hygiene 2026" required>
                         </div>
                     </div>
 
                     <div class="form-col">
                         <div class="form-group">
-                            <label for="course_titel">Titel des Kurses (imsmanifest.xml)</label>
-                            <input type="text" id="course_titel" name="course_titel" value="<?php echo htmlspecialchars($editData['course_title']); ?>" placeholder="Titel, den der Nutzer im LMS sieht" required>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-col" style="max-width: 50%;">
-                        <div class="form-group">
-                            <label for="scorm_version">SCORM Version (Strikte Validierung)</label>
-                            <select id="scorm_version" name="scorm_version" class="form-select">
-                                <!-- PHP proverava šta je u bazi i dodaje reč 'selected' tamo gde treba -->
-                                <option value="1.2" <?php if ($editData['scorm_version'] === '1.2') echo 'selected'; ?>>SCORM 1.2</option>
-                                <option value="2004" <?php if ($editData['scorm_version'] === '2004') echo 'selected'; ?>>SCORM 2004</option>
-                            </select>
+                            <label for="course_titel">Titel des Kurses</label>
+                            <input type="text" id="course_titel" name="course_titel" value="<?php echo htmlspecialchars($editData['course_title'] ?? ''); ?>" placeholder="Titel, den der Nutzer im LMS sieht" required>
                         </div>
                     </div>
                 </div>

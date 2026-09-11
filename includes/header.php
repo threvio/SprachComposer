@@ -15,7 +15,9 @@
     <header id="header">
         <div class="container header-inner">
             <div class="header-left">
-                <h1>Sprach<span>Composer</span></h1>
+                <h1>
+                    <a href="index.php" style="text-decoration: none; color: inherit;">Sprach<span>Composer</span></a>
+                </h1>
             </div>
             <!-- Prüfen, ob der Benutzer eingeloggt ist (Session existiert) -->
             <?php if (isset($_SESSION['user_id'])): ?>

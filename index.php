@@ -37,6 +37,13 @@ require_once "includes/header.php";
             $statusMsg = "<strong>Erfolg!</strong> Ihr Projekt wurde erstellt und der Download startet automatisch.";
         } elseif (isset($_GET['deleted']) && $_GET['deleted'] == 1) {
             $statusMsg = "<strong>Gelöscht!</strong> Das Projekt wurde erfolgreich entfernt.";
+        } elseif (isset($_GET['success'])) {
+            // Spezifische Erfolgsmeldungen abfangen
+            if ($_GET['success'] === 'saved') {
+                $statusMsg = "<strong>Gespeichert!</strong> Änderungen wurden erfolgreich gespeichert.";
+            } elseif ($_GET['success'] === '1') {
+                $statusMsg = "<strong>Erfolg!</strong> Aktion erfolgreich durchgeführt.";
+            }
         }
         ?>
 
@@ -52,13 +59,12 @@ require_once "includes/header.php";
                     var msgBox = document.getElementById('status-message');
                     if (msgBox) {
                         // Weicher Übergang (Fade-out)
-                        msgBox.style.transition = "opacity 0.6s ease";
-                        msgBox.style.opacity = "0";
+                        msgBox.classList.add('fade-out');
 
                         // Element nach dem Ausblenden komplett aus dem Layout entfernen
                         setTimeout(function() {
-                            msgBox.style.display = "none";
-                        }, 600);
+                            msgBox.remove();
+                        }, 500);
                     }
                 }, 5000); // 5000 Millisekunden = 5 Sekunden
             </script>

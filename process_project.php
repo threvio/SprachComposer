@@ -5,13 +5,13 @@ session_start();
 // Datenbankverbindung einbinden
 require_once "includes/db.php";
 
-// Zugriffsschutz: Prüfen, ob der Benutzer eingeloggt ist
+// Prüfen, ob der Benutzer eingeloggt ist
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
 
-// Hilfsfunktion ganz nach oben verschieben (sauberer Architektur-Stil)
+// Hilfsfunktion
 function getScormStartFile($manifestPath)
 {
     if (!file_exists($manifestPath)) {
@@ -24,20 +24,46 @@ function getScormStartFile($manifestPath)
     return 'index.html';
 }
 
+// Funktion zur automatischen Erkennung des E-Learning-Standards
+function detectCourseStandard($extractPath)
+{
+
+    // A. xAPI Prüfung: Existiert eine tincan.xml?
+    if (file_exists($extractPath . '/tincan.xml')) {
+        return 'xAPI';
+    }
+
+    // B. SCORM Prüfung: Existiert ein imsmanifest.xml?
+    $manifestPath = $extractPath . '/imsmanifest.xml';
+    if (file_exists($manifestPath)) {
+        $xml = @simplexml_load_file($manifestPath);
+        if ($xml && isset($xml->metadata->schemaversion)) {
+            $version = (string)$xml->metadata->schemaversion;
+            if (strpos($version, '2004') !== false || strpos($version, '1.3') !== false) {
+                return 'SCORM 2004';
+            }
+        }
+        return 'SCORM 1.2';
+    }
+    return 'Unknown';
+}
+
 // Maximale Ausführungszeit auf unendlich setzen
 set_time_limit(0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // 1. Grundlegende Formulardaten sicher abrufen
+    // Grundlegende Formulardaten sicher abrufen
     $projectName  = $_POST['project_name'] ?? 'Unbenanntes Projekt';
-    $courseTitle  = $_POST['course_titel'] ?? 'SCORM Modul';
-    $scormVersion = $_POST['scorm_version'] ?? 'SCORM 1.2';
+    $courseTitle  = $_POST['course_titel'] ?? 'E-Learning Modul';
     $primaryColor = $_POST['primary_color'] ?? '#00386b';
     $layoutStyle  = $_POST['layout_style'] ?? 'layout1';
     $action       = $_POST['action'] ?? 'save_only';
 
-    /* SCHRITT 1 (ehemals 7): PROJEKT IMMER IN DER DATENBANK SPEICHERN */
+    // Da wir das Feld aus dem HTML entfernt haben, setzen wir einen Platzhalter
+    $scormVersion = 'Wird ermittelt...';
+
+    /* SCHRITT 1: PROJEKT IMMER IN DER DATENBANK SPEICHERN */
     try {
         if (isset($_POST['project_id']) && !empty($_POST['project_id'])) {
             $stmt = $pdo->prepare("UPDATE projects SET project_name = :pname, course_title = :ctitle, scorm_version = :sversion, primary_color = :pcolor, layout_style = :lstyle WHERE id = :id AND user_id = :uid");
@@ -62,16 +88,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         }
     } catch (PDOException $e) {
-        error_log("DB Fehler beim Speichern/Aktualisieren des Projekts: " . $e->getMessage());
+        // Skript sofort abbrechen, falls das Projekt nicht in der Datenbank gespeichert werden konnte
+        die("Kritischer Datenbankfehler: " . $e->getMessage());
     }
 
-    // ====================================================================
-    // SCHRITT 2: PRÜFEN, OB NUR GESPEICHERT ODER GENERIERT WERDEN SOLL
-    // ====================================================================
+    // Projekt-ID für spätere automatische Updates speichern (prüfen, ob leer)
+    $currentProjectId = !empty($_POST['project_id']) ? $_POST['project_id'] : $pdo->lastInsertId();
 
+    /* SCHRITT 2: PRÜFEN, OB NUR GESPEICHERT ODER GENERIERT WERDEN SOLL */
     if ($action === 'save_only') {
-        // Wenn nur "Speichern" geklickt wurde, brechen wir hier ab und gehen zum Dashboard!
-        header("Location: index.php?success=1");
+        // Spezifisches Signal 'saved' an das Dashboard übergeben, um die korrekte Meldung anzuzeigen
+        header("Location: index.php?success=saved");
         exit;
     }
 
@@ -90,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tempDirPath = __DIR__ . '/temp/' . $tempDirName;
 
         if (!is_dir($tempDirPath)) {
-            mkdir($tempDirPath, 0777, true);
+            mkdir($tempDirPath, 0755, true);
         }
 
         /* SCHRITT 4: HOCHGELADENE DATEIEN IM WORKSPACE SPEICHERN */
@@ -131,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $extractPath = $tempDirPath . '/' . $langCode;
 
             if (!is_dir($extractPath)) {
-                mkdir($extractPath, 0777, true);
+                mkdir($extractPath, 0755, true);
             }
 
             if ($zip->open($zipFilePath) === TRUE) {
@@ -143,56 +170,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        /* SCHRITT 6: LANDING-PAGE (INDEX.HTML) GENERIEREN */
-        $indexPath = $tempDirPath . '/index.html';
+        /* SCHRITT 6: LANDING-PAGE (INDEX.HTML) GENERIEREN MIT SMARTY */
+
+        // Smarty-Klasse einbinden
+        require_once __DIR__ . '/libs/Smarty.class.php';
+
+        // Smarty instanziieren und Verzeichnisse konfigurieren
+        $smarty = new \Smarty\Smarty();
+        $smarty->setTemplateDir(__DIR__ . '/templates/');
+        $smarty->setCompileDir(__DIR__ . '/templates_c/');
+        $smarty->setCacheDir(__DIR__ . '/cache/');
+        $smarty->setConfigDir(__DIR__ . '/configs/');
+
+        // Layout-Klasse für den Container bestimmen
         $containerClass = ($layoutStyle === 'layout2') ? 'container split-layout' : 'container';
 
-        $htmlContent = '<!DOCTYPE html>
-        <html lang="de">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>' . htmlspecialchars($courseTitle) . '</title>
-            <style>
-                :root {
-                    --primary: ' . htmlspecialchars($primaryColor) . ';
-                    --bg-tint: color-mix(in srgb, var(--primary) 6%, #f4f7f6);
-                    --shadow-tint: color-mix(in srgb, var(--primary) 20%, transparent);
-                }
-                body { font-family: "Segoe UI", Arial, sans-serif; background-color: var(--bg-tint); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-                .container { background: white; padding: 50px; border-radius: 16px; box-shadow: 0 15px 40px var(--shadow-tint); max-width: 650px; width: 100%; text-align: center; }
-                .container.split-layout { display: flex; flex-direction: row; align-items: center; max-width: 850px; padding: 40px; text-align: left; gap: 40px; }
-                .split-layout .logo-wrapper { flex: 0 0 35%; display: flex; justify-content: center; }
-                .split-layout .content-wrapper { flex: 0 0 calc(65% - 40px); }
-                .split-layout .btn-group { justify-content: flex-start; }
-                h1 { color: var(--primary); margin-top: 0; margin-bottom: 8px; font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
-                .subtitle { color: #666666; margin-bottom: 35px; font-size: 16px; font-style: italic; font-weight: 500; letter-spacing: -0.5px; }
-                .btn-group { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
-                .btn { position: relative; display: flex; justify-content: center; align-items: center; width: 130px; height: 90px; text-decoration: none; color: white; border-radius: 12px; font-weight: 800; font-size: 32px; text-shadow: 0 2px 5px rgba(0,0,0,0.8); transition: transform 0.2s, box-shadow 0.2s; overflow: hidden; box-shadow: 0 5px 15px var(--shadow-tint); }
-                .btn:hover { transform: translateY(-4px) scale(1.03); box-shadow: 0 12px 25px var(--shadow-tint); }
-                .logo-img { max-width: 100%; max-height: 120px; border-radius: 8px; object-fit: contain; }
-                @media (max-width: 650px) { .container.split-layout { flex-direction: column; text-align: center; gap: 20px; } .split-layout .btn-group { justify-content: center; } .split-layout .logo-wrapper, .split-layout .content-wrapper { flex: 1 1 100%; } }
-            </style>
-        </head>
-        <body>
-        <div class="' . $containerClass . '">';
-
-        if ($layoutStyle === 'layout2') {
-            $htmlContent .= '<div class="logo-wrapper">';
-            if ($logoFilename) {
-                $htmlContent .= '<img src="' . htmlspecialchars($logoFilename) . '" alt="Kunden Logo" class="logo-img">';
-            }
-            $htmlContent .= '</div><div class="content-wrapper">';
-        } else {
-            if ($logoFilename) {
-                $htmlContent .= '<img src="' . htmlspecialchars($logoFilename) . '" alt="Kunden Logo" class="logo-img" style="margin-bottom: 25px;">';
-            }
-        }
-
-        $htmlContent .= '<h1>' . htmlspecialchars($courseTitle) . '</h1>
-            <p class="subtitle">Bitte wählen Sie Ihre Sprache / Please select your language:</p>
-            <div class="btn-group">';
-
+        // Array für die Sprach-Buttons vorbereiten
+        $languageLinks = [];
         foreach ($uploadedLanguages as $langCode) {
             $langName = strtoupper($langCode);
             $flagCode = ($langCode === 'en') ? 'gb' : $langCode;
@@ -202,61 +196,133 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $extractedManifestPath = $tempDirPath . '/' . $langCode . '/imsmanifest.xml';
             $startFile = getScormStartFile($extractedManifestPath);
 
-            $htmlContent .= '<a href="' . $langCode . '/' . $startFile . '" class="btn" style="' . $bgStyle . '">' . $langName . '</a>';
+            // Button-Daten in das Array pushen
+            $languageLinks[] = [
+                'url' => $langCode . '/' . $startFile,
+                'name' => $langName,
+                'bgStyle' => $bgStyle
+            ];
         }
 
-        $htmlContent .= '</div>';
-        if ($layoutStyle === 'layout2') {
-            $htmlContent .= '</div>';
-        }
-        $htmlContent .= '</div></body></html>';
+        // Variablen an die Smarty-Template-Engine übergeben
+        $smarty->assign('courseTitle', $courseTitle);
+        $smarty->assign('primaryColor', $primaryColor);
+        $smarty->assign('layoutStyle', $layoutStyle);
+        $smarty->assign('containerClass', $containerClass);
+        $smarty->assign('logoFilename', $logoFilename);
+        $smarty->assign('languageLinks', $languageLinks);
 
+        // HTML-Inhalt aus dem Template generieren lassen
+        $htmlContent = $smarty->fetch('landingpage.tpl');
+
+        // Generierte HTML-Datei physisch im Arbeitsverzeichnis speichern
+        $indexPath = $tempDirPath . '/index.html';
         file_put_contents($indexPath, $htmlContent);
 
-        /* SCHRITT 7: MASTER SCORM-MANIFEST (imsmanifest.xml) GENERIEREN */
-        $manifestPath = $tempDirPath . '/imsmanifest.xml';
-        $manifestId = 'com.sprachcomposer.pkg_' . time();
-        $orgId = 'org_' . time();
-        $itemId = 'item_' . time();
-        $resourceId = 'res_' . time();
+        /* SCHRITT 7: STANDARD ERKENNEN & MASTER-XML (SCORM ODER XAPI) GENERIEREN */
+        // Den Standard anhand des ersten hochgeladenen Sprachpakets erkennen
+        $firstLangPath = $tempDirPath . '/' . $uploadedLanguages[0];
+        $detectedStandard = detectCourseStandard($firstLangPath);
 
-        if ($scormVersion === '2004') {
-            $schema = 'ADL SCORM';
-            $schemaVersion = '2004 3rd Edition';
-            $manifestTag = '<manifest identifier="' . $manifestId . '" version="1.0" xmlns="http://www.imsglobal.org/xsd/imscp_v1p1" xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_v1p3" xmlns:adlseq="http://www.adlnet.org/xsd/adlseq_v1p3" xmlns:adlnav="http://www.adlnet.org/xsd/adlnav_v1p3" xmlns:imsss="http://www.imsglobal.org/xsd/imsss">';
+        if ($detectedStandard === 'Unknown') {
+            die("Fehler: Das hochgeladene ZIP-Paket ist weder ein gültiges SCORM- noch ein xAPI-Paket.");
+        }
+
+        // Datenbank mit dem automatisch erkannten Standard aktualisieren
+        $stmtUpdate = $pdo->prepare("UPDATE projects SET scorm_version = :sversion WHERE id = :id");
+        $stmtUpdate->execute(['sversion' => $detectedStandard, 'id' => $currentProjectId]);
+
+        // Alle Dateien im Workspace scannen, um sie korrekt im Manifest aufzulisten (Behebt den Fehler fehlender Dateien)
+        $resourceFilesXml = '';
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tempDirPath));
+
+        foreach ($iterator as $file) {
+            if (!$file->isDir()) {
+                $filePath = $file->getRealPath();
+                $relativePath = substr($filePath, strlen($tempDirPath) + 1);
+                // Backslashes für Windows-Systeme in Slashes umwandeln
+                $relativePath = str_replace('\\', '/', $relativePath);
+
+                // Wir ignorieren temporäre ZIPs und die Master-XML-Dateien selbst
+                if (pathinfo($relativePath, PATHINFO_EXTENSION) !== 'zip' && $relativePath !== 'imsmanifest.xml' && $relativePath !== 'tincan.xml') {
+                    $resourceFilesXml .= '<file href="' . htmlspecialchars($relativePath) . '"/>' . "\n            ";
+                }
+            }
+        }
+
+        // FORK: Entweder xAPI oder SCORM generieren
+        if ($detectedStandard === 'xAPI') {
+
+            // --- GENERIERUNG: xAPI (tincan.xml) ---
+            $tincanPath = $tempDirPath . '/tincan.xml';
+            $activityId = 'http://sprachcomposer.com/course/' . time();
+
+            $xmlContent = '<?xml version="1.0" encoding="utf-8" ?>
+            <tincan xmlns="http://projecttincan.com/tincan.xsd">
+                <activities>
+                    <activity id="' . $activityId . '" type="http://adlnet.gov/expapi/activities/course">
+                        <name>' . htmlspecialchars($courseTitle) . '</name>
+                        <description lang="de-DE">Generiertes xAPI-Projekt</description>
+                        <launch>index.html</launch>
+                    </activity>
+                </activities>
+            </tincan>';
+
+            file_put_contents($tincanPath, $xmlContent);
         } else {
-            $schema = 'ADL SCORM';
-            $schemaVersion = '1.2';
-            $manifestTag = '<manifest identifier="' . $manifestId . '" version="1.0" xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2" xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">';
-        }
 
-        $xmlContent = '<?xml version="1.0" encoding="UTF-8"?>
-        ' . $manifestTag . '
-        <metadata>
-            <schema>' . $schema . '</schema>
-            <schemaversion>' . $schemaVersion . '</schemaversion>
-        </metadata>
-        <organizations default="' . $orgId . '">
-            <organization identifier="' . $orgId . '">
-            <title>' . htmlspecialchars($courseTitle) . '</title>
-            <item identifier="' . $itemId . '" identifierref="' . $resourceId . '">
+            // --- GENERIERUNG: SCORM 1.2 oder 2004 (imsmanifest.xml) ---
+            $manifestPath = $tempDirPath . '/imsmanifest.xml';
+            $manifestId = 'com.sprachcomposer.pkg_' . time();
+            $orgId = 'org_' . time();
+            $itemId = 'item_' . time();
+            $resourceId = 'res_' . time();
+
+            if ($detectedStandard === 'SCORM 2004') {
+                $schema = 'ADL SCORM';
+                $schemaVersion = '2004 3rd Edition';
+                $manifestTag = '<manifest identifier="' . $manifestId . '" version="1.0" xmlns="http://www.imsglobal.org/xsd/imscp_v1p1" xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_v1p3" xmlns:adlseq="http://www.adlnet.org/xsd/adlseq_v1p3" xmlns:adlnav="http://www.adlnet.org/xsd/adlnav_v1p3" xmlns:imsss="http://www.imsglobal.org/xsd/imsss">';
+            } else {
+                $schema = 'ADL SCORM';
+                $schemaVersion = '1.2';
+                $manifestTag = '<manifest identifier="' . $manifestId . '" version="1.0" xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2" xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">';
+            }
+
+            $xmlContent = '<?xml version="1.0" encoding="UTF-8"?>
+            ' . $manifestTag . '
+            <metadata>
+                <schema>' . $schema . '</schema>
+                <schemaversion>' . $schemaVersion . '</schemaversion>
+            </metadata>
+            <organizations default="' . $orgId . '">
+                <organization identifier="' . $orgId . '">
                 <title>' . htmlspecialchars($courseTitle) . '</title>
-            </item>
-            </organization>
-        </organizations>
-        <resources>
-            <resource identifier="' . $resourceId . '" type="webcontent" adlcp:scormtype="sco" href="index.html">
-            <file href="index.html"/>';
+                <item identifier="' . $itemId . '" identifierref="' . $resourceId . '">
+                    <title>' . htmlspecialchars($courseTitle) . '</title>
+                </item>
+                </organization>
+            </organizations>
+            <resources>
+                <resource identifier="' . $resourceId . '" type="webcontent" adlcp:scormtype="sco" href="index.html">
+                ' . $resourceFilesXml . '
+                </resource>
+            </resources>
+            </manifest>';
 
-        if ($logoFilename) {
-            $xmlContent .= '<file href="' . htmlspecialchars($logoFilename) . '"/>';
+            file_put_contents($manifestPath, $xmlContent);
+
+            // XSD-Definitionsdateien automatisch in das SCORM-Paket kopieren
+            $xsdSourceDir = __DIR__ . '/xsd_templates/';
+            if (is_dir($xsdSourceDir)) {
+                // Alle .xsd Dateien aus dem Vorlagenordner suchen
+                $xsdFiles = glob($xsdSourceDir . '*.xsd');
+                foreach ($xsdFiles as $xsdFile) {
+                    $fileName = basename($xsdFile);
+                    // Datei in das temporäre Arbeitsverzeichnis kopieren
+                    copy($xsdFile, $tempDirPath . '/' . $fileName);
+                }
+            }
         }
-        $xmlContent .= '
-            </resource>
-        </resources>
-        </manifest>';
-
-        file_put_contents($manifestPath, $xmlContent);
 
         /* SCHRITT 8: ALLES IN EIN MASTER-ZIP PACKEN & DOWNLOADEN */
         $finalZipName = 'SCORM_' . $cleanProjectName . '.zip';

@@ -44,7 +44,7 @@ try {
         user_id INT NOT NULL,
         project_name VARCHAR(100) NOT NULL,
         course_title VARCHAR(150) NOT NULL,
-        scorm_version ENUM('1.2', '2004') NOT NULL DEFAULT '1.2',
+        scorm_version VARCHAR(50) DEFAULT 'Wird ermittelt...',
         primary_color VARCHAR(10) DEFAULT '#00386b',
         layout_style ENUM('layout1', 'layout2') DEFAULT 'layout1',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -76,17 +76,29 @@ a {
     font-size: 13px;
     border-left: 3px solid var(--fehler);
     border-radius: 8px;
-    transition: opacity 0.5s ease-out;
+    max-height: 150px; 
+    overflow: hidden;
+    transition: all 0.5s ease-out;
 }
 .erfolg-msg {
     background-color: var(--bg-color);
-    color: #22c55e;
+    color: var(--success);
     padding: 12px 16px;
     margin-bottom: 16px;
     font-size: 14px;
-    border-left: 3px solid #22c55e;
+    border-left: 3px solid var(--success);
     border-radius: 8px;
-    transition: opacity 0.5s ease-out;
+    max-height: 150px; 
+    overflow: hidden;
+    transition: all 0.5s ease-out;
+}
+.fade-out {
+    opacity: 0 !important;
+    max-height: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border: none !important;
 }
 
 /* Header */
@@ -312,7 +324,7 @@ p.text-bottom {
 }
 .btn-primary:hover {
     background: var(--darkyellow);
-    color: var(--text-main);
+    color: var(--card-bg2);
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(29, 52, 71, 0.15);
 }
@@ -338,7 +350,7 @@ p.text-bottom {
 
 .btn-secondary:hover {
     background: var(--blue);
-    color: var(--darkyellow);
+    color: var(--card-bg2);
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(29, 52, 71, 0.15);
 }
@@ -685,9 +697,13 @@ input[type="file"]:not(.hidden-file-input)::file-selector-button:active {
         gap: 15px;
     }
     
-    .form-actions .btn-primary {
+    .form-actions .btn-primary,
+    .form-actions .btn-secondary {
         width: 100%;
         justify-content: center;
+    }
+    .form-actions .btn-secondary {
+        margin-bottom: 12px;
     }
 
     .form-card-section {
