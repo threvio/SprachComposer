@@ -33,8 +33,8 @@
                         <!-- Das aktuelle Datum auf Deutsch formatieren (Monat Tag, Jahr) -->
                         <?php
                         $monate = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
-                        $aktuellerMonat = $monate[date('n') - 1]; // date('n') vraca broj meseca od 1 do 12
-                        $formatiertesDatum = $aktuellerMonat . ' ' . date('j, Y'); // Spajamo: Mesec Dan, Godina
+                        $aktuellerMonat = $monate[date('n') - 1]; // date('n')
+                        $formatiertesDatum = $aktuellerMonat . ' ' . date('j, Y');
                         ?>
                         <p><span> | <?php echo $formatiertesDatum; ?></span></p>
                     </div>

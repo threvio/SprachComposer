@@ -1,6 +1,19 @@
+# Temporäre Dateien für ZIP-Verarbeitung
 /temp/*
 !/temp/.gitkeep
+
+# Smarty Cache und kompilierte Templates (UNBEDINGT HINZUFÜGEN)
+/templates_c/
+/cache/
+
+# Konfiguration und sensible Daten
 config.ini
 .env
+
+# IDE-Einstellungen (VS Code, NetBeans)
 nbproject/
 .vscode/
+
+# Systemdateien (OS-Müll - immer nützlich)
+.DS_Store
+Thumbs.db

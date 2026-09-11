@@ -22,8 +22,7 @@
     padding: 0;
 }
 
-/* Alle Formularfelder verwenden dieselbe Schriftart wie der Body.
-"Inherit" bedeutet, dass die Eigenschaft vom übergeordneten Element übernommen wird – sie folgt immer dem Elternstil! */
+/* Alle Formularfelder verwenden dieselbe Schriftart wie der Body */
 input,
 textarea,
 select,

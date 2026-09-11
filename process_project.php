@@ -102,10 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Wenn "generate" geklickt wurde, geht der Code hier weiter...
+    // Wenn "generate" geklickt wurde, geht der Code hier weiter
     if ($action === 'generate') {
 
-        // Validierung der Sprachen (nur beim Generieren!)
+        // Validierung der Sprachen
         if (!isset($_POST['languages']) || empty($_POST['languages'])) {
             die("Fehler: Bitte wählen Sie mindestens eine Sprache aus.");
         }
@@ -171,7 +171,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         /* SCHRITT 6: LANDING-PAGE (INDEX.HTML) GENERIEREN MIT SMARTY */
-
         // Smarty-Klasse einbinden
         require_once __DIR__ . '/libs/Smarty.class.php';
 
@@ -363,8 +362,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             die("Fehler: Die ZIP-Datei wurde nicht gefunden.");
         }
-    } // HIER IST DIE WICHTIGE ZUGEHÖRIGE KLAMMER FÜR "if ($action === 'generate')"
-
+    }
 } else {
     header("Location: create_project.php");
     exit;

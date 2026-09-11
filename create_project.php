@@ -122,11 +122,11 @@ require_once "includes/header.php";
                             </label>
                         </div>
                         <div class="lang-upload-right">
-                            <!-- Skriveni pravi input -->
+
                             <input type="file" name="scorm_zip_de" id="zip_de" accept=".zip" class="hidden-file-input">
-                            <!-- Naše lažno dugme koje okida skriveni input -->
+
                             <label for="zip_de" class="custom-file-btn">Datei auswählen</label>
-                            <!-- Naš tekst koji ćemo menjati preko JS-a -->
+
                             <span class="custom-file-text" id="text_zip_de">Keine ausgewählt</span>
                         </div>
                     </div>
