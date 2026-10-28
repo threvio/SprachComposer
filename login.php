@@ -94,7 +94,7 @@ require_once 'includes/header.php';
 
             <button type="submit" class="btn">Anmelden</button>
 
-            <p class="text-bottom">Sie haben Ihr Passwort vergessen? Bitte wenden Sie sich an den <a href="#">Administrator</a>.</p>
+            <p class="text-bottom">Sie haben Ihr Passwort vergessen? Bitte wenden Sie sich an Ihren <a href="#">Systemadministrator</a>.</p>
         </form>
     </div>
 </div>

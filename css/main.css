@@ -363,7 +363,8 @@ p.text-bottom {
     border-radius: 12px;
     border: 1px solid var(--border);
     box-shadow: 0 4px 12px rgba(29, 52, 71, 0.04);
-    max-height: 600px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     position: relative;
 }
@@ -716,7 +717,21 @@ input[type="file"]:not(.hidden-file-input)::file-selector-button:active {
 
 }
 
+/* Dashboard: nur die Projektübersicht */
+body:has(.project-table) .dashboard-wrapper {
+    height: calc(100vh - 160px);
+    flex: none;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
 
+body:has(.project-table) .main-card {
+    min-height: 0;
+}
 
-
-
+body:has(.project-table) .table-card {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}

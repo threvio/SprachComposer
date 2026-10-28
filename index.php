@@ -2,6 +2,10 @@
 //Session start
 session_start();
 
+// Fehlermeldung aus der Session einmalig auslesen
+$errorMessage = $_SESSION['error_message'] ?? '';
+unset($_SESSION['error_message']);
+
 // Zugriffsschutz: Prüfen, ob der User eingeloggt ist
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
@@ -29,27 +33,38 @@ require_once "includes/header.php";
 <!-- Hauptinhalt der Dashboard-Seite -->
 <main class="container dashboard-wrapper">
     <div class="main-card">
-
+        
         <?php
-        // Bestimmen, welche Nachricht angezeigt werden soll
+        // Nachricht und passenden CSS-Stil bestimmen
         $statusMsg = "";
-        if ($downloadFile) {
+        $statusClass = "erfolg-msg";
+
+        // Fehler hat Vorrang
+        if (!empty($errorMessage)) {
+            $statusMsg = "<strong>Fehler!</strong> " . htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8');
+            $statusClass = "error-msg";
+
+        } elseif ($downloadFile) {
             $statusMsg = "<strong>Erfolg!</strong> Ihr Projekt wurde erstellt und der Download startet automatisch.";
+
         } elseif (isset($_GET['deleted']) && $_GET['deleted'] == 1) {
             $statusMsg = "<strong>Gelöscht!</strong> Das Projekt wurde erfolgreich entfernt.";
+
         } elseif (isset($_GET['success'])) {
-            // Spezifische Erfolgsmeldungen abfangen
+
             if ($_GET['success'] === 'saved') {
                 $statusMsg = "<strong>Gespeichert!</strong> Änderungen wurden erfolgreich gespeichert.";
+
             } elseif ($_GET['success'] === '1') {
                 $statusMsg = "<strong>Erfolg!</strong> Aktion erfolgreich durchgeführt.";
             }
         }
         ?>
 
+
         <!-- Gemeinsamer Container für alle Meldungen -->
         <?php if (!empty($statusMsg)): ?>
-            <div class="erfolg-msg" id="status-message">
+            <div class="<?php echo $statusClass; ?>" id="status-message">
                 <?php echo $statusMsg; ?>
             </div>
 
@@ -66,7 +81,7 @@ require_once "includes/header.php";
                             msgBox.remove();
                         }, 500);
                     }
-                }, 5000); // 5000 Millisekunden = 5 Sekunden
+                }, 8000); // 8000 Millisekunden = 8 Sekunden
             </script>
         <?php endif; ?>
 

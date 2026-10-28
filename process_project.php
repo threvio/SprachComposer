@@ -48,6 +48,46 @@ function detectCourseStandard($extractPath)
     return 'Unknown';
 }
 
+
+//Temporäres Arbeitsverzeichnis rekursiv löschen
+function cleanupTempDirectory($dirPath)
+{
+    if (!is_dir($dirPath)) {
+        return;
+    }
+
+    // Erst alle Dateien und Unterordner löschen
+    $dir = new RecursiveDirectoryIterator($dirPath, RecursiveDirectoryIterator::SKIP_DOTS);
+    $files = new RecursiveIteratorIterator($dir, RecursiveIteratorIterator::CHILD_FIRST);
+
+    foreach ($files as $file) {
+        if ($file->isDir()) {
+            rmdir($file->getPathname());
+        } else {
+            unlink($file->getPathname());
+        }
+    }
+
+    // Am Ende den Hauptordner löschen
+    rmdir($dirPath);
+}
+
+//Fehlermeldung speichern und zum Dashboard zurückkehren
+function redirectWithError($message, $tempDirPath = null)
+{
+    // Temporäre Dateien bei einem Fehler entfernen
+    if ($tempDirPath !== null) {
+        cleanupTempDirectory($tempDirPath);
+    }
+
+    // Fehlermeldung in der Session speichern
+    $_SESSION['error_message'] = $message;
+
+    // Zurück zum Dashboard
+    header("Location: index.php");
+    exit;
+}
+
 // Maximale Ausführungszeit auf unendlich setzen
 set_time_limit(0);
 
@@ -61,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action       = $_POST['action'] ?? 'save_only';
 
     // Da wir das Feld aus dem HTML entfernt haben, setzen wir einen Platzhalter
-    $scormVersion = 'Wird ermittelt...';
+    $scormVersion = 'Entwurf';
 
     /* SCHRITT 1: PROJEKT IMMER IN DER DATENBANK SPEICHERN */
     try {
@@ -166,11 +206,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $zip->close();
                 unlink($zipFilePath);
             } else {
-                die("Fehler: SCORM-Paket für '" . strtoupper($langCode) . "' konnte nicht entpackt werden.");
+                die("Fehler: Kurspaket für '" . strtoupper($langCode) . "' konnte nicht entpackt werden.");
             }
         }
 
-        /* SCHRITT 6: LANDING-PAGE (INDEX.HTML) GENERIEREN MIT SMARTY */
+        /* SCHRITT 6: STANDARD ERKENNEN UND VERSIONEN PRÜFEN */
+        // Standard des ersten Sprachpakets ermitteln
+        $firstLangPath = $tempDirPath . '/' . $uploadedLanguages[0];
+        $detectedStandard = detectCourseStandard($firstLangPath);
+
+        if ($detectedStandard === 'Unknown') {
+            redirectWithError("Das erste Kurspaket hat kein erkanntes Format.", $tempDirPath);
+        }
+
+        // Alle weiteren Sprachpakete überprüfen
+        foreach ($uploadedLanguages as $langCode) {
+            $languagePath = $tempDirPath . '/' . $langCode;
+            $currentStandard = detectCourseStandard($languagePath);
+
+            // Unbekanntes Format ablehnen
+            if ($currentStandard === 'Unknown') {
+                redirectWithError("Das Kurspaket für " . strtoupper($langCode) . " hat kein erkanntes Format.", $tempDirPath);
+            }
+
+            // Unterschiedliche Standards nicht zulassen
+            if ($currentStandard !== $detectedStandard) {
+                redirectWithError("Die Kursformate stimmen nicht überein. " . "Erwartet: " . $detectedStandard . ", gefunden bei " . strtoupper($langCode) . ": " . $currentStandard, $tempDirPath);
+            }
+        }
+
+        // Datenbank mit dem automatisch erkannten Standard aktualisieren
+        $stmtUpdate = $pdo->prepare("UPDATE projects SET scorm_version = :sversion WHERE id = :id");
+        $stmtUpdate->execute(['sversion' => $detectedStandard, 'id' => $currentProjectId]);
+
+        /* SCHRITT 7: LANDING-PAGE (INDEX.HTML) GENERIEREN MIT SMARTY */
         // Smarty-Klasse einbinden
         require_once __DIR__ . '/libs/Smarty.class.php';
 
@@ -218,19 +287,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $indexPath = $tempDirPath . '/index.html';
         file_put_contents($indexPath, $htmlContent);
 
-        /* SCHRITT 7: STANDARD ERKENNEN & MASTER-XML (SCORM ODER XAPI) GENERIEREN */
-        // Den Standard anhand des ersten hochgeladenen Sprachpakets erkennen
-        $firstLangPath = $tempDirPath . '/' . $uploadedLanguages[0];
-        $detectedStandard = detectCourseStandard($firstLangPath);
-
-        if ($detectedStandard === 'Unknown') {
-            die("Fehler: Das hochgeladene ZIP-Paket ist weder ein gültiges SCORM- noch ein xAPI-Paket.");
-        }
-
-        // Datenbank mit dem automatisch erkannten Standard aktualisieren
-        $stmtUpdate = $pdo->prepare("UPDATE projects SET scorm_version = :sversion WHERE id = :id");
-        $stmtUpdate->execute(['sversion' => $detectedStandard, 'id' => $currentProjectId]);
-
         // Alle Dateien im Workspace scannen, um sie korrekt im Manifest aufzulisten (Behebt den Fehler fehlender Dateien)
         $resourceFilesXml = '';
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tempDirPath));
@@ -249,6 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        /* SCHRITT 8: MASTER-XML GENERIEREN (SCORM ODER XAPI) */
         // FORK: Entweder xAPI oder SCORM generieren
         if ($detectedStandard === 'xAPI') {
 
@@ -323,7 +380,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        /* SCHRITT 8: ALLES IN EIN MASTER-ZIP PACKEN & DOWNLOADEN */
+        /* SCHRITT 9: ALLES IN EIN MASTER-ZIP PACKEN & DOWNLOADEN */
         $finalZipName = 'SCORM_' . $cleanProjectName . '.zip';
         $finalZipPath = __DIR__ . '/temp/' . $finalZipName;
 
@@ -344,18 +401,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $masterZip->close();
 
-            // GARBAGE COLLECTION
-            $dir = new RecursiveDirectoryIterator($tempDirPath, RecursiveDirectoryIterator::SKIP_DOTS);
-            $files = new RecursiveIteratorIterator($dir, RecursiveIteratorIterator::CHILD_FIRST);
-            foreach ($files as $file) {
-                $file->isDir() ? rmdir($file->getRealPath()) : unlink($file->getRealPath());
-            }
-            rmdir($tempDirPath);
+            // Temporäre Arbeitsdateien nach erfolgreicher Generierung löschen
+            cleanupTempDirectory($tempDirPath);
         } else {
             die("Kritischer Fehler: Die finale ZIP-Datei konnte nicht erstellt werden.");
         }
 
-        /* SCHRITT 9: ZUM DASHBOARD WEITERLEITEN (MIT DOWNLOAD-TRIGGER) */
+        /* SCHRITT 10: ZUM DASHBOARD WEITERLEITEN (MIT DOWNLOAD-TRIGGER) */
         if (file_exists($finalZipPath)) {
             header("Location: index.php?success=1&download=" . urlencode($finalZipName));
             exit;
