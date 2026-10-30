@@ -89,7 +89,7 @@ require_once "includes/header.php";
         <div class="dashboard-header">
             <div class="dashboard-title-group">
                 <h2>Projektübersicht</h2>
-                <p>Verwalten Sie hier Ihre mehrsprachigen SCORM-Projekte.</p>
+                <p>Verwalten Sie hier Ihre mehrsprachigen E-Learning-Projekte.</p>
             </div>
 
             <div class="dashboard-actions">
@@ -106,7 +106,7 @@ require_once "includes/header.php";
                 <thead>
                     <tr>
                         <th>Projektname</th>
-                        <th>SCORM-Version</th>
+                        <th>Kursstandard</th>
                         <th>Erstellt am</th>
                         <th class="text-right">Aktionen</th>
                     </tr>

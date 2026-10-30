@@ -109,7 +109,7 @@ require_once "includes/header.php";
 
             <!-- BLOCK 3: Sprachen und SCORM-Pakete -->
             <div class="form-card-section">
-                <h3>3. Sprachen und SCORM-Pakete</h3>
+                <h3>3.  Sprachen und Kurspakete</h3>
                 <p class="section-desc">Wählen Sie die benötigten Sprachen und laden Sie pro Sprache die entsprechende ZIP-Datei hoch.</p>
 
                 <div class="language-grid">

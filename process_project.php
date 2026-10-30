@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($uploadedLanguages)) {
-            die("Fehler: Es wurden keine gültigen SCORM-ZIP-Dateien hochgeladen.");
+            die("Fehler: Es wurden keine gültigen Kurspakete hochgeladen.");
         }
 
         /* SCHRITT 5: ZIP-DATEIEN ENTPACKEN (UNZIP) */
