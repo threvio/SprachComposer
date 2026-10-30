@@ -278,7 +278,6 @@ p.text-bottom {
     display: flex;
     flex-direction: column;
     flex: 1;
-    overflow: hidden;
 }
 .dashboard-wrapper {
     flex: 1;
@@ -408,7 +407,7 @@ p.text-bottom {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: opacity 0.2s ease all;
+    transition: opacity 0.2s ease;
 }
 .table-actions a:hover {
     opacity: 0.7;
@@ -719,8 +718,7 @@ input[type="file"]:not(.hidden-file-input)::file-selector-button:active {
 
 /* Dashboard: nur die Projektübersicht */
 body:has(.project-table) .dashboard-wrapper {
-    height: calc(100vh - 160px);
-    flex: none;
+    flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
